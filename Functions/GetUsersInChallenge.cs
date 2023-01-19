@@ -57,7 +57,7 @@ namespace FunctionApp3.Functions
                     conn.Close();
                     conn.Open();
                     cmd.CommandText = $"SELECT dbo.GetChallengeDetails('{challId}')";
-
+                    log.LogDebug("1");
                     cmd.Connection = conn;
 
                     reader = cmd.ExecuteReader();
@@ -69,30 +69,38 @@ namespace FunctionApp3.Functions
                             cd.Details = reader.GetString(0);
                         }
                     }
-
+                    log.LogDebug("2");
                     conn.Close();
                     conn.Open();
                     cmd.CommandText = $"SELECT dbo.GetActivities('{challId}')";
-
+                    log.LogDebug("22");
                     cmd.Connection = conn;
                     reader = cmd.ExecuteReader();
 
                     if (reader.HasRows)
                     {
-                        while (reader.Read())
+                        while (reader.Read() && !reader.IsDBNull(0))
                         {
+                            log.LogDebug("3");
                             activitiesJsonString = reader.GetString(0);
                         }
                     }
 
-                    var actList = JsonConvert.DeserializeObject<List<Activitiy>>(activitiesJsonString);
+                    log.LogDebug("5");
                     var userList = JsonConvert.DeserializeObject<List<AppUser>>(usersJsonString);
-
-                    foreach (var u in userList)
+                    log.LogDebug("56");
+                    log.LogInformation("activitiesJsonString", activitiesJsonString);
+                    if(!String.IsNullOrEmpty(activitiesJsonString))
                     {
-                        u.Activities = actList.FindAll(act => act.UserId.Equals(u.UserId)).ToArray();
-                    }
+                        log.LogDebug("56 if");
+                        var actList = JsonConvert.DeserializeObject<List<Activitiy>>(activitiesJsonString);
+                        foreach (var u in userList)
+                        {
+                            u.Activities = actList.FindAll(act => act.UserId.Equals(u.UserId)).ToArray();
+                        }
 
+                    }
+                    log.LogDebug("77");
                     cd.Users = JsonConvert.SerializeObject(new
                     {
                         users = userList
@@ -104,7 +112,7 @@ namespace FunctionApp3.Functions
                     }
                     else
                     {
-                        log.LogInformation("Failed");
+                        log.LogInformation("Failed or no acts");
                     }
                 }
 
@@ -116,6 +124,7 @@ namespace FunctionApp3.Functions
 
                 log.LogInformation("Catched Error", e);
                 log.LogDebug(e.Message);
+                log.LogDebug("this is a debug log");
                 return new OkObjectResult(e);
             }
         }

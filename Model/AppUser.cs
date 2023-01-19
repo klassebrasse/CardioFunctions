@@ -14,6 +14,7 @@ namespace FunctionApp3.Model
         public string LastName { get; set; }
         public string ProfilePic { get; set; }
         public Activitiy[] Activities { get; set; }
+        public Boolean isPremiumUser { get; set; }
 
         public AppUser(string email, string userId, string firstName, string lastName, string profilePic, Activitiy[] activities)
         {

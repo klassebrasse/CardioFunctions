@@ -13,17 +13,17 @@ using FunctionApp3.Model;
 
 namespace FunctionApp3.Functions
 {
-    public static class RemoveChallenge
+    public static class InsertActivity
     {
-        [FunctionName("RemoveChallenge")]
+        [FunctionName("InsertActivity")]
         public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req,
-            ILogger log)
+                [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req,
+                ILogger log)
         {
 
             try
             {
-                log.LogInformation("C# HTTP trigger function, RemoveChallenge, processed a request.");
+                log.LogInformation("C# HTTP trigger function, InsertActivity, processed a request.");
 
                 // Get the connection string from app settings and use it to create a connection.
                 var str = Environment.GetEnvironmentVariable("sqldb_connection");
@@ -35,9 +35,12 @@ namespace FunctionApp3.Functions
                 }
                 dynamic data = JsonConvert.DeserializeObject(requestBody);
 
-                log.LogDebug("body", requestBody);
+                log.LogInformation(requestBody);
 
+                string jsonString = "";
                 int returnValue = 100;
+                CreateChallenge newChallCreated;
+                string newActId = Guid.NewGuid().ToString("N");
 
                 using (SqlConnection conn = new SqlConnection(str))
                 {
@@ -47,9 +50,13 @@ namespace FunctionApp3.Functions
 
                     cmd.CommandText = "DECLARE\t@return_value int\n" +
                                         "\n" +
-                                        "EXEC\t@return_value = [dbo].[RemoveChallenge]\n" +
-                                        $"\t\t@ChallengeId = '{data.ChallengeId}',\n" +
-                                        $"\t\t@UserId = '{data.UserId}'\n" +
+                                        "EXEC\t@return_value = [dbo].[InsertActivity]\n" +
+                                        $"\t\t@ActivityId = '{newActId}',\n" +
+                                        $"\t\t@UserId = '{data.UserId}',\n" +
+                                        $"\t\t@Date = '{data.Date}',\n" +
+                                        $"\t\t@TypeOf = '{data.TypeOf}',\n" +
+                                        $"\t\t@Km = {data.Km},\n" +
+                                        $"\t\t@Kcal = {data.Kcal}\n" +
                                         "\n" +
                                         "SELECT\t'Return Value' = @return_value";
 
@@ -57,19 +64,23 @@ namespace FunctionApp3.Functions
 
                     reader = cmd.ExecuteReader();
 
+                    /*                    if (reader.HasRows)
+                                        {
+                                            while (reader.Read())
+                                            {
+                                                jsonString = reader.GetString(0);
+                                            }
+                                        }
+
+                                        log.LogDebug(jsonString);
+
+                                        */
+
                     if (reader.Read())
                     {
                         returnValue = reader.IsDBNull(reader.GetInt32(0)) ? 99 : reader.GetInt32(0);
                     }
 
-                    if (returnValue != 0)
-                    {
-                        log.LogInformation("Error code: " + returnValue);
-                    }
-                    else
-                    {
-                        log.LogInformation("Successfull: " + returnValue);
-                    }
 
                 }
 
@@ -83,5 +94,6 @@ namespace FunctionApp3.Functions
                 return new OkObjectResult(e);
             }
         }
+
     }
 }
